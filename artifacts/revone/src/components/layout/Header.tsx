@@ -69,7 +69,7 @@ export function Header() {
           {/* Logo */}
           <div className="flex-1 md:flex-none flex justify-center md:justify-start">
             <Link href="/">
-              <img src={Logo} alt="Revone" className="h-6 md:h-8" />
+              <img src={Logo} alt="Empress" className="h-6 md:h-8" />
             </Link>
           </div>
 
@@ -152,7 +152,7 @@ export function Header() {
               className="fixed top-0 left-0 bottom-0 w-80 bg-white z-[70] flex flex-col overflow-y-auto"
             >
               <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                <img src={Logo} alt="Revone" className="h-7" />
+                <img src={Logo} alt="Empress" className="h-7" />
                 <button
                   onClick={() => setMenuOpen(false)}
                   data-testid="button-close-menu"
@@ -198,7 +198,7 @@ export function Header() {
               </nav>
 
               <div className="p-6 border-t border-gray-100">
-                <p className="text-xs text-gray-400 text-center">© 2025 Revone. All rights reserved.</p>
+                <p className="text-xs text-gray-400 text-center">© 2025 Empress. All rights reserved.</p>
               </div>
             </motion.div>
           </>

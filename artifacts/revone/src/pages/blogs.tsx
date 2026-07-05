@@ -30,7 +30,7 @@ export default function Blogs() {
           <div className="container mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">The Journal</h1>
             <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed mb-4">
-              Style stories, buying guides, and fashion insights from the Revone team.
+              Style stories, buying guides, and fashion insights from the Empress team.
             </p>
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
               <Link href="/" className="hover:text-black transition-colors">Home</Link>

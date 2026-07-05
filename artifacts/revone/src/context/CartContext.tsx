@@ -24,7 +24,7 @@ const CartContext = createContext<CartContextType | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
-      const stored = localStorage.getItem("revone-cart");
+      const stored = localStorage.getItem("empress-cart");
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -32,7 +32,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    localStorage.setItem("revone-cart", JSON.stringify(items));
+    localStorage.setItem("empress-cart", JSON.stringify(items));
   }, [items]);
 
   const addItem = useCallback((product: Product, size: string, color: string, quantity = 1) => {

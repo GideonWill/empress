@@ -8,7 +8,7 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="space-y-6">
-            <img src={Logo} alt="Revone" className="h-8 invert brightness-0 invert" style={{ filter: "invert(1)" }} />
+            <img src={Logo} alt="Empress" className="h-8 invert brightness-0 invert" style={{ filter: "invert(1)" }} />
             <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
               AdornThemes is a premium Shopify theme developer creating beautiful, high-converting e-commerce experiences.
             </p>
@@ -71,7 +71,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-          <p>© 2025, Revone. All rights reserved.</p>
+          <p>© 2025, Empress. All rights reserved.</p>
         </div>
       </div>
     </footer>

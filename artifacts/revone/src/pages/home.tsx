@@ -62,7 +62,7 @@ export default function Home() {
             >
               <div className="absolute inset-0 md:-right-10 lg:-right-20 pt-8 md:pt-0">
                 <img
-                  src="/images/hero-model.png"
+                  src="/images/slipper3.jpeg"
                   alt="Fashion Model"
                   className="w-full h-full object-cover object-top md:object-center"
                 />
@@ -151,7 +151,7 @@ export default function Home() {
               </div>
               <div className="w-full md:w-80 lg:w-96 aspect-[3/4] bg-gray-800 overflow-hidden flex-shrink-0">
                 <img
-                  src="/images/product-1.png"
+                  src="/images/slipper4.jpeg"
                   alt="Sale Collection"
                   className="w-full h-full object-cover opacity-80"
                 />
