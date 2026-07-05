@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Revone"
+version = "1.0.0"
+id = "artifacts/revone"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22844
+
+[services.development]
+run = "pnpm --filter @workspace/revone run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/revone", "run", "build" ]
+publicDir = "artifacts/revone/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22844"
+BASE_PATH = "/"

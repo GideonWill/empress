@@ -1,0 +1,62 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "-SrpAz9-Qn1ocvcn9a9FB"
+uri = "file://artifacts/revone/public/images/hero-model.png"
+type = "image"
+title = "Fashion model on cream bg"
+
+[[generated]]
+id = "DQhVRTF1WvToSxmnAvnk1"
+uri = "file://artifacts/revone/public/images/category-women.png"
+type = "image"
+title = "Women category"
+
+[[generated]]
+id = "gHva2QJ0lZEr6eOm-9rx3"
+uri = "file://artifacts/revone/public/images/category-new.png"
+type = "image"
+title = "New Arrival category"
+
+[[generated]]
+id = "fGn2a3lwIVCywkDEeh0JV"
+uri = "file://artifacts/revone/public/images/category-men.png"
+type = "image"
+title = "Men category"
+
+[[generated]]
+id = "3YXI2K2wHLmBuTR0so8g_"
+uri = "file://artifacts/revone/public/images/category-footwear.png"
+type = "image"
+title = "Footwear category"
+
+[[generated]]
+id = "lebr1f2ussh-w___l7src"
+uri = "file://artifacts/revone/public/images/category-kids.png"
+type = "image"
+title = "Kids category"
+
+[[generated]]
+id = "VPsCfCTrvXBIgpo21Xd3N"
+uri = "file://artifacts/revone/public/images/category-deal.png"
+type = "image"
+title = "Deal Zone category"
+
+[[generated]]
+id = "Ji27Q-N5VRfE29AuMGtbs"
+uri = "file://artifacts/revone/public/images/category-accessories.png"
+type = "image"
+title = "Accessories category"
+
+[[generated]]
+id = "iVu_TTdKnhWJQMFlRi5z0"
+uri = "file://artifacts/revone/public/images/product-1.png"
+type = "image"
+title = "Black dress product"
+
+[[generated]]
+id = "fmauPcGe3P8HXwE8KtvVk"
+uri = "file://artifacts/revone/public/images/product-2.png"
+type = "image"
+title = "White shirt product"
