@@ -7,14 +7,16 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { TrustBanner } from "@/components/layout/TrustBanner";
 import { ProductCard } from "@/components/ui/product-card";
-import { PRODUCTS } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
+import { formatPrice } from "@/lib/currency";
+import { useProductStore } from "@/context/ProductStore";
 
 export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
-  const product = PRODUCTS.find(p => p.id === id);
+  const { getProduct, products } = useProductStore();
+  const product = getProduct(id || "");
   const { addItem } = useCart();
   const { toggle, isWishlisted } = useWishlist();
   const { toast } = useToast();
@@ -23,7 +25,7 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
 
-  const related = PRODUCTS.filter(p => p.id !== id && p.category === product?.category).slice(0, 4);
+  const related = products.filter(p => p.id !== id && p.category === product?.category).slice(0, 4);
 
   if (!product) {
     return (
@@ -44,8 +46,16 @@ export default function ProductPage() {
 
   function handleAddToCart() {
     if (!product) return;
+    if (product.stock === 0) {
+      toast({ title: "Product is out of stock", variant: "destructive" });
+      return;
+    }
     if (!selectedSize) {
       toast({ title: "Please select a size", variant: "destructive" });
+      return;
+    }
+    if (product.stock !== undefined && quantity > product.stock) {
+      toast({ title: `Only ${product.stock} items left in stock`, variant: "destructive" });
       return;
     }
     const color = selectedColor || product.colors[0];
@@ -130,9 +140,9 @@ export default function ProductPage() {
 
                 {/* Price */}
                 <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold text-black">${product.price.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-black">{formatPrice(product.price)}</span>
                   {product.originalPrice && (
-                    <span className="text-lg text-gray-400 line-through">${product.originalPrice.toFixed(2)}</span>
+                    <span className="text-lg text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>
                   )}
                   {product.originalPrice && (
                     <span className="text-sm font-bold text-[#E63946]">
@@ -140,6 +150,28 @@ export default function ProductPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Stock status notice */}
+                {product.stock !== undefined && (
+                  <div className="mt-4">
+                    {product.stock === 0 ? (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-red-50 border border-red-150 text-[11px] font-bold tracking-wide uppercase text-red-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                        Out of Stock
+                      </div>
+                    ) : product.stock <= 5 ? (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-amber-50 border border-amber-150 text-[11px] font-bold tracking-wide uppercase text-amber-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                        Only {product.stock} left in stock - order soon!
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-50 border border-emerald-150 text-[11px] font-bold tracking-wide uppercase text-emerald-700">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        In Stock ({product.stock} available)
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
@@ -190,29 +222,36 @@ export default function ProductPage() {
                 <div className="flex items-center border border-gray-300">
                   <button
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    disabled={product.stock === 0}
                     data-testid="qty-minus"
-                    className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                    className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-50"
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="w-12 text-center font-semibold text-sm" data-testid="qty-value">{quantity}</span>
+                  <span className="w-12 text-center font-semibold text-sm" data-testid="qty-value">{product.stock === 0 ? 0 : quantity}</span>
                   <button
-                    onClick={() => setQuantity(q => q + 1)}
+                    onClick={() => setQuantity(q => product.stock !== undefined ? Math.min(product.stock, q + 1) : q + 1)}
+                    disabled={product.stock === 0 || (product.stock !== undefined && quantity >= product.stock)}
                     data-testid="qty-plus"
-                    className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                    className="w-11 h-11 flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-50"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
 
                 <motion.button
-                  whileTap={{ scale: 0.97 }}
+                  whileTap={product.stock === 0 ? undefined : { scale: 0.97 }}
                   onClick={handleAddToCart}
+                  disabled={product.stock === 0}
                   data-testid="button-add-to-cart"
-                  className="flex-1 bg-black text-white h-11 rounded-full font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors"
+                  className={`flex-1 h-11 rounded-full font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 transition-colors ${
+                    product.stock === 0 
+                      ? "bg-gray-150 text-gray-400 cursor-not-allowed border border-gray-200" 
+                      : "bg-black text-white hover:bg-gray-800"
+                  }`}
                 >
                   <ShoppingBag size={18} />
-                  Add to Cart
+                  {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
                 </motion.button>
 
                 <button
@@ -268,12 +307,11 @@ export default function ProductPage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {related.map(p => <ProductCard key={p.id} {...p} price={`$${p.price.toFixed(2)}`} originalPrice={p.originalPrice ? `$${p.originalPrice.toFixed(2)}` : undefined} />)}
+              {related.map(p => <ProductCard key={p.id} {...p} price={formatPrice(p.price)} originalPrice={p.originalPrice ? formatPrice(p.originalPrice) : undefined} />)}
             </div>
           </section>
         )}
 
-        <TrustBanner />
       </main>
 
       <Footer />

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/google:
+    post:
+      operationId: googleLogin
+      tags: [auth]
+      summary: Google Login
+      description: Authenticates user with Google credential token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleLoginRequest"
+      responses:
+        "200":
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /auth/profile:
+    get:
+      operationId: getProfile
+      tags: [auth]
+      summary: Get Profile
+      description: Returns the currently authenticated user profile
+      responses:
+        "200":
+          description: User profile details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      description: Clear cookies and invalidates session
+      responses:
+        "200":
+          description: Successful logout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                  - message
 components:
   schemas:
     HealthStatus:
@@ -33,4 +87,40 @@ components:
           type: string
       required:
         - status
-
+    GoogleLoginRequest:
+      type: object
+      properties:
+        credential:
+          type: string
+      required:
+        - credential
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        googleId:
+          type: string
+          nullable: true
+        fullName:
+          type: string
+        email:
+          type: string
+        profileImage:
+          type: string
+          nullable: true
+        authProvider:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fullName
+        - email
+        - authProvider
+        - createdAt
+        - updatedAt

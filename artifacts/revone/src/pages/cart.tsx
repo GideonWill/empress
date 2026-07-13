@@ -1,16 +1,46 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, X, ShoppingBag, ArrowRight, Tag } from "lucide-react";
+import { Minus, Plus, X, ShoppingBag, ArrowRight } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useCart } from "@/context/CartContext";
+import { formatPrice } from "@/lib/currency";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, totalItems, totalPrice } = useCart();
-  const shipping = totalPrice > 0 ? (totalPrice >= 100 ? 0 : 9.99) : 0;
-  const tax = totalPrice * 0.075;
-  const orderTotal = totalPrice + shipping + tax;
+  const [couponInput, setCouponInput] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [activeCoupon, setActiveCoupon] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
+
+  const coupons: Record<string, number> = {
+    "WELCOME10": 0.10, // 10% off
+    "EMPRESS20": 0.20, // 20% off
+    "FREE50": 0.50     // 50% off
+  };
+
+  const handleApplyCoupon = () => {
+    setCouponError("");
+    setCouponSuccess("");
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+    if (code in coupons) {
+      setDiscountPercent(coupons[code]);
+      setActiveCoupon(code);
+      setCouponSuccess(`Coupon ${code} applied successfully!`);
+    } else {
+      setCouponError("Invalid coupon code");
+    }
+  };
+
+  const discountAmount = totalPrice * discountPercent;
+  const finalTotal = totalPrice - discountAmount;
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
@@ -94,7 +124,7 @@ export default function CartPage() {
 
                       {/* Price */}
                       <div className="hidden md:flex col-span-2 justify-center">
-                        <span className="text-sm font-semibold">${item.product.price.toFixed(2)}</span>
+                        <span className="text-sm font-semibold">{formatPrice(item.product.price)}</span>
                       </div>
 
                       {/* Quantity */}
@@ -120,31 +150,38 @@ export default function CartPage() {
 
                       {/* Total */}
                       <div className="col-span-5 md:col-span-2 flex justify-end items-center">
-                        <span className="text-sm font-bold">${(item.product.price * item.quantity).toFixed(2)}</span>
+                        <span className="text-sm font-bold">{formatPrice(item.product.price * item.quantity)}</span>
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
-                <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1 flex border border-gray-200 overflow-hidden rounded-full">
-                    <input
-                      type="text"
-                      placeholder="Coupon code"
-                      data-testid="input-coupon"
-                      className="flex-1 px-5 text-sm outline-none bg-transparent"
-                    />
-                    <button
-                      data-testid="button-apply-coupon"
-                      className="px-6 py-3 bg-black text-white text-sm font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors"
-                    >
-                      Apply
-                    </button>
+                <div className="mt-6 flex flex-col sm:flex-row gap-4 items-start">
+                  <div className="flex-1 flex flex-col gap-2 w-full">
+                    <div className="flex border border-gray-200 overflow-hidden rounded-full w-full bg-white">
+                      <input
+                        type="text"
+                        placeholder="Coupon code (WELCOME10, EMPRESS20)"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        data-testid="input-coupon"
+                        className="flex-1 px-5 text-sm outline-none bg-transparent"
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        data-testid="button-apply-coupon"
+                        className="px-6 py-3 bg-black text-white text-sm font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {couponError && <p className="text-xs text-red-500 font-medium px-4">{couponError}</p>}
+                    {couponSuccess && <p className="text-xs text-green-600 font-medium px-4">{couponSuccess}</p>}
                   </div>
                   <Link
                     href="/shop"
                     data-testid="link-back-shop"
-                    className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide border border-gray-300 px-6 py-3 rounded-full hover:border-black transition-colors justify-center"
+                    className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide border border-gray-300 px-6 py-3 rounded-full hover:border-black transition-colors justify-center whitespace-nowrap"
                   >
                     Continue Shopping
                   </Link>
@@ -159,22 +196,12 @@ export default function CartPage() {
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal ({totalItems} items)</span>
-                      <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+                      <span className="font-semibold">{formatPrice(totalPrice)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Shipping</span>
-                      <span className={`font-semibold ${shipping === 0 ? "text-green-600" : ""}`}>
-                        {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax (7.5%)</span>
-                      <span className="font-semibold">${tax.toFixed(2)}</span>
-                    </div>
-                    {totalPrice < 100 && totalPrice > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 bg-white px-3 py-2">
-                        <Tag size={12} />
-                        Add ${(100 - totalPrice).toFixed(2)} more for free shipping
+                    {discountPercent > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 font-semibold">
+                        <span>Discount ({activeCoupon})</span>
+                        <span>-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
                   </div>
@@ -182,7 +209,7 @@ export default function CartPage() {
                   <div className="border-t border-gray-200 pt-4 mb-6">
                     <div className="flex justify-between">
                       <span className="font-bold uppercase tracking-wide text-sm">Order Total</span>
-                      <span className="font-bold text-xl">${orderTotal.toFixed(2)}</span>
+                      <span className="font-bold text-xl">{formatPrice(finalTotal)}</span>
                     </div>
                   </div>
 

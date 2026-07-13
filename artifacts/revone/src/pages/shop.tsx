@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useLocation } from "wouter";
+import { useWishlist } from "@/context/WishlistContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Grid3X3, List, ChevronDown, Filter, X } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
@@ -8,7 +9,10 @@ import { Footer } from "@/components/layout/Footer";
 import { TrustBanner } from "@/components/layout/TrustBanner";
 import { ProductCard } from "@/components/ui/product-card";
 import { CategoryCircle } from "@/components/ui/category-circle";
-import { PRODUCTS, CATEGORIES } from "@/data/products";
+import { CATEGORIES } from "@/data/products";
+import { formatPrice } from "@/lib/currency";
+import { useProductStore } from "@/context/ProductStore";
+import ShopHeroImg from "@assets/outfit 2.jpeg";
 
 const COLORS = [
   { name: "Black", code: "#000000" },
@@ -22,18 +26,126 @@ const COLORS = [
 ];
 
 const SORT_OPTIONS = ["Featured", "Price: Low to High", "Price: High to Low", "Newest", "Best Rating"];
-const CATEGORY_NAMES = ["All", ...Array.from(new Set(PRODUCTS.map(p => p.category)))];
+
+function hexToRgb(hex: string) {
+  const cleanHex = hex.replace("#", "");
+  const bigint = parseInt(cleanHex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return { r, g, b };
+}
+
+function colorDistance(color1: string, color2: string) {
+  try {
+    const rgb1 = hexToRgb(color1);
+    const rgb2 = hexToRgb(color2);
+    return Math.sqrt(
+      Math.pow(rgb1.r - rgb2.r, 2) +
+      Math.pow(rgb1.g - rgb2.g, 2) +
+      Math.pow(rgb1.b - rgb2.b, 2)
+    );
+  } catch {
+    return Infinity;
+  }
+}
 
 export default function Shop() {
+  const { products } = useProductStore();
+  const CATEGORY_NAMES = useMemo(() => ["All", ...Array.from(new Set(products.map(p => p.category)))], [products]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [location] = useLocation();
+  const { items: wishlistItems } = useWishlist();
+  const [wishlistOnly, setWishlistOnly] = useState(false);
   const [sortBy, setSortBy] = useState("Featured");
   const [showSort, setShowSort] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [customColor, setCustomColor] = useState("#ffffff");
+  const [useCustomColor, setUseCustomColor] = useState(false);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [priceMin, setPriceMin] = useState(0);
   const [priceMax, setPriceMax] = useState(500);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const productsRef = useRef<HTMLDivElement>(null);
+
+  function handleCategoryClick(categoryName: string) {
+    if (categoryName === "New Arrival") {
+      setSelectedCategory("All");
+      setOnSaleOnly(false);
+      setSortBy("Newest");
+    } else if (categoryName === "Deal Zone") {
+      setSelectedCategory("All");
+      setOnSaleOnly(true);
+    } else {
+      setSelectedCategory(categoryName);
+      setOnSaleOnly(false);
+    }
+    // Scroll to products section
+    setTimeout(() => {
+      productsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }
+
+  const [currentSearch, setCurrentSearch] = useState(window.location.search);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setCurrentSearch(window.location.search);
+    };
+
+    window.addEventListener("popstate", handleUrlChange);
+
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function (...args) {
+      originalPushState.apply(this, args);
+      handleUrlChange();
+    };
+
+    history.replaceState = function (...args) {
+      originalReplaceState.apply(this, args);
+      handleUrlChange();
+    };
+
+    return () => {
+      window.removeEventListener("popstate", handleUrlChange);
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+    };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(currentSearch);
+    const catParam = params.get("category");
+    const wishlistParam = params.get("wishlist");
+
+    if (wishlistParam === "true") {
+      setWishlistOnly(true);
+      setSelectedCategory("All");
+      setOnSaleOnly(false);
+    } else {
+      setWishlistOnly(false);
+      if (catParam) {
+        if (["Clothing", "Shoes", "Wigs"].includes(catParam)) {
+          setSelectedCategory(catParam);
+          setOnSaleOnly(false);
+        } else if (catParam === "Sale") {
+          setSelectedCategory("All");
+          setOnSaleOnly(true);
+        } else if (catParam === "New") {
+          setSelectedCategory("All");
+          setOnSaleOnly(false);
+          setSortBy("Newest");
+        }
+      } else {
+        setSelectedCategory("All");
+        setOnSaleOnly(false);
+      }
+    }
+  }, [currentSearch]);
 
   function toggleColor(code: string) {
     setSelectedColors(prev =>
@@ -41,10 +153,28 @@ export default function Shop() {
     );
   }
 
+  function toggleSize(size: string) {
+    setSelectedSizes(prev =>
+      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
+    );
+  }
+
   const filtered = useMemo(() => {
-    let list = [...PRODUCTS];
-    if (selectedCategory !== "All") list = list.filter(p => p.category === selectedCategory);
-    if (selectedColors.length > 0) list = list.filter(p => p.colors.some(c => selectedColors.includes(c)));
+    let list = [...products];
+    if (wishlistOnly) {
+      list = list.filter(p => wishlistItems.some(item => item.id === p.id));
+    }
+    if (selectedCategory !== "All") {
+      list = list.filter(p => p.category === selectedCategory);
+    }
+    if (useCustomColor) {
+      list = list.filter(p => p.colors.some(c => colorDistance(c, customColor) < 120));
+    } else if (selectedColors.length > 0) {
+      list = list.filter(p => p.colors.some(c => selectedColors.includes(c)));
+    }
+    if (selectedSizes.length > 0) {
+      list = list.filter(p => p.sizes.some(s => selectedSizes.includes(s)));
+    }
     list = list.filter(p => p.price >= priceMin && p.price <= priceMax);
     if (onSaleOnly) list = list.filter(p => p.onSale);
 
@@ -55,16 +185,21 @@ export default function Shop() {
       case "Best Rating": list.sort((a, b) => b.rating - a.rating); break;
     }
     return list;
-  }, [selectedCategory, selectedColors, priceMin, priceMax, onSaleOnly, sortBy]);
+  }, [products, wishlistOnly, wishlistItems, selectedCategory, selectedColors, useCustomColor, customColor, selectedSizes, priceMin, priceMax, onSaleOnly, sortBy]);
 
-  const activeFilterCount = (selectedCategory !== "All" ? 1 : 0) + selectedColors.length + (onSaleOnly ? 1 : 0);
+  const activeFilterCount = (wishlistOnly ? 1 : 0) + (selectedCategory !== "All" ? 1 : 0) + (useCustomColor ? 1 : selectedColors.length) + selectedSizes.length + (onSaleOnly ? 1 : 0);
 
   function clearFilters() {
     setSelectedCategory("All");
     setSelectedColors([]);
+    setUseCustomColor(false);
+    setSelectedSizes([]);
     setPriceMin(0);
     setPriceMax(500);
     setOnSaleOnly(false);
+    if (wishlistOnly) {
+      history.pushState(null, "", "/shop");
+    }
   }
 
   const SidebarContent = () => (
@@ -82,7 +217,7 @@ export default function Shop() {
               >
                 <span>{cat}</span>
                 <span className={`text-xs ${selectedCategory === cat ? "text-gray-300" : "text-gray-400"}`}>
-                  {cat === "All" ? PRODUCTS.length : PRODUCTS.filter(p => p.category === cat).length}
+                  {cat === "All" ? products.length : products.filter((p: any) => p.category === cat).length}
                 </span>
               </button>
             </li>
@@ -137,17 +272,84 @@ export default function Shop() {
 
       {/* Color Filter */}
       <div className="border-t border-gray-100 pt-6">
-        <h3 className="font-bold text-sm uppercase tracking-widest mb-4 text-gray-800">Color</h3>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-sm uppercase tracking-widest text-gray-800">Color</h3>
+          {useCustomColor && (
+            <button 
+              onClick={() => setUseCustomColor(false)}
+              className="text-[10px] text-gray-450 hover:text-black uppercase tracking-wider font-bold"
+            >
+              Reset Custom
+            </button>
+          )}
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
           {COLORS.map(color => (
             <button
               key={color.name}
-              onClick={() => toggleColor(color.code)}
+              onClick={() => {
+                setUseCustomColor(false);
+                toggleColor(color.code);
+              }}
               data-testid={`filter-color-${color.name.toLowerCase()}`}
               title={color.name}
-              className={`w-9 h-9 rounded-full border-2 transition-all ${selectedColors.includes(color.code) ? "border-black scale-110 shadow-md" : "border-gray-200 hover:border-gray-400"}`}
+              className={`w-9 h-9 rounded-full border-2 transition-all ${!useCustomColor && selectedColors.includes(color.code) ? "border-black scale-110 shadow-md" : "border-gray-200 hover:border-gray-400"}`}
               style={{ backgroundColor: color.code }}
             />
+          ))}
+
+          {/* Custom Color Picker Button */}
+          <div className="relative w-9 h-9">
+            <button
+              title="Choose Custom Color"
+              onClick={() => {
+                setSelectedColors([]);
+                setUseCustomColor(true);
+              }}
+              className={`w-9 h-9 rounded-full border-2 transition-all overflow-hidden flex items-center justify-center ${useCustomColor ? "border-black scale-110 shadow-md" : "border-gray-200 hover:border-gray-400"}`}
+              style={{ 
+                background: "linear-gradient(45deg, #ff0055, #00ff55, #0055ff, #ffcc00)" 
+              }}
+            >
+              <div 
+                className="w-5 h-5 rounded-full border border-white"
+                style={{ backgroundColor: useCustomColor ? customColor : "transparent" }}
+              />
+            </button>
+            <input 
+              type="color"
+              value={customColor}
+              onChange={(e) => {
+                setSelectedColors([]);
+                setCustomColor(e.target.value);
+                setUseCustomColor(true);
+              }}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {useCustomColor && (
+          <p className="text-[11px] text-gray-500 mt-2 font-medium">
+            Filtering products close to custom color: <span className="font-bold text-black">{customColor}</span>
+          </p>
+        )}
+      </div>
+
+      {/* Size Filter */}
+      <div className="border-t border-gray-100 pt-6">
+        <h3 className="font-bold text-sm uppercase tracking-widest mb-4 text-gray-800">Size</h3>
+        <div className="flex flex-wrap gap-2">
+          {["XS", "S", "M", "L", "XL", "XXL"].map(size => (
+            <button
+              key={size}
+              onClick={() => toggleSize(size)}
+              data-testid={`filter-size-${size.toLowerCase()}`}
+              className={`min-w-10 h-10 flex items-center justify-center text-xs font-semibold border transition-all ${selectedSizes.includes(size) ? "bg-black text-white border-black font-bold" : "bg-white text-gray-800 border-gray-200 hover:border-gray-400"}`}
+            >
+              {size}
+            </button>
           ))}
         </div>
       </div>
@@ -170,32 +372,44 @@ export default function Shop() {
       <Header />
 
       <main className="flex-1 bg-white">
-        {/* Page Header */}
-        <div className="bg-[#FAF8F5] py-14 px-4">
-          <div className="container mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Shop All</h1>
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-              <Link href="/" className="hover:text-black transition-colors">Home</Link>
+        {/* Hero Banner */}
+        <section className="relative h-[45vh] min-h-[280px] w-full overflow-hidden bg-black">
+          <img
+            src={ShopHeroImg}
+            alt="Shop All"
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4 tracking-tight">
+              {wishlistOnly ? "My Favorites" : "Shop All"}
+            </h1>
+            <div className="flex items-center space-x-2 text-sm text-gray-300 font-semibold">
+              <Link href="/" className="hover:text-white transition-colors">Home</Link>
               <ChevronRight size={14} />
-              <span className="text-black">Shop</span>
+              <span className="text-white">{wishlistOnly ? "Favorites" : "Shop"}</span>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Category Circles */}
         <div className="border-b border-gray-100 py-8">
           <div className="container mx-auto px-4">
             <div className="flex overflow-x-auto pb-2 -mx-4 px-4 md:justify-center md:flex-wrap md:overflow-visible gap-4 md:gap-6 hide-scrollbar">
               {CATEGORIES.map((category) => (
-                <div key={category.name} className="flex-shrink-0 scale-[0.8] origin-top -my-2">
-                  <CategoryCircle name={category.name} image={category.image} href={category.href} />
+                <div
+                  key={category.name}
+                  className="flex-shrink-0 scale-[0.8] origin-top -my-2 cursor-pointer"
+                  onClick={() => handleCategoryClick(category.name)}
+                >
+                  <CategoryCircle name={category.name} image={category.image} />
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-10">
+        <div ref={productsRef} className="container mx-auto px-4 py-10" id="products-section">
           <div className="flex flex-col lg:flex-row gap-10">
             {/* Desktop Sidebar */}
             <aside className="hidden lg:block w-64 flex-shrink-0">
@@ -353,8 +567,8 @@ export default function Shop() {
                       key={product.id}
                       id={product.id}
                       name={product.name}
-                      price={`$${product.price.toFixed(2)}`}
-                      originalPrice={product.originalPrice ? `$${product.originalPrice.toFixed(2)}` : undefined}
+                      price={formatPrice(product.price)}
+                      originalPrice={product.originalPrice ? formatPrice(product.originalPrice) : undefined}
                       image={product.image}
                       onSale={product.onSale}
                       isNew={product.isNew}
@@ -380,8 +594,8 @@ export default function Shop() {
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              {product.originalPrice && <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>}
-                              <span className="font-bold">${product.price.toFixed(2)}</span>
+                              {product.originalPrice && <span className="text-sm text-gray-400 line-through">{formatPrice(product.originalPrice)}</span>}
+                              <span className="font-bold">{formatPrice(product.price)}</span>
                             </div>
                             <span className="text-xs text-gray-400">{product.category}</span>
                           </div>
@@ -395,7 +609,6 @@ export default function Shop() {
           </div>
         </div>
 
-        <TrustBanner />
       </main>
 
       <Footer />

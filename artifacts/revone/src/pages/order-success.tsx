@@ -6,7 +6,8 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/ui/product-card";
-import { PRODUCTS } from "@/data/products";
+import { formatPrice } from "@/lib/currency";
+import { useProductStore } from "@/context/ProductStore";
 
 function useSearchParam(key: string) {
   if (typeof window === "undefined") return "";
@@ -18,12 +19,13 @@ export default function OrderSuccessPage() {
   const ref = useSearchParam("ref");
   const method = useSearchParam("method");
   const isPOD = method === "pod";
+  const { products } = useProductStore();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const suggestedProducts = PRODUCTS.slice(0, 4);
+  const suggestedProducts = products.slice(0, 4);
 
   const steps = [
     {
@@ -137,7 +139,7 @@ export default function OrderSuccessPage() {
           <p className="text-gray-500 text-center text-sm mb-10">Discover more pieces from our collection</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {suggestedProducts.map(p => (
-              <ProductCard key={p.id} {...p} price={`$${p.price.toFixed(2)}`} originalPrice={p.originalPrice ? `$${p.originalPrice.toFixed(2)}` : undefined} />
+              <ProductCard key={p.id} {...p} price={formatPrice(p.price)} originalPrice={p.originalPrice ? formatPrice(p.originalPrice) : undefined} />
             ))}
           </div>
         </section>

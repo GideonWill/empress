@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, CreditCard, Truck, Shield, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ChevronRight, CreditCard, Shield, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Header } from "@/components/layout/Header";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { formatPrice } from "@/lib/currency";
+import { useOrderStore } from "@/context/OrderStore";
+import type { Order } from "@/context/OrderStore";
+import { useProductStore } from "@/context/ProductStore";
 
 declare global {
   interface Window {
@@ -28,7 +32,7 @@ declare global {
 }
 
 type Step = "contact" | "shipping" | "payment";
-type PaymentMethod = "paystack" | "pod";
+type PaymentMethod = "paystack";
 
 interface FormData {
   email: string;
@@ -77,6 +81,8 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<Step>("contact");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   const [isProcessing, setIsProcessing] = useState(false);
+  const { addOrder } = useOrderStore();
+  const { updateProduct, products } = useProductStore();
   const [form, setForm] = useState<FormData>({
     email: "",
     firstName: "",
@@ -86,13 +92,11 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     zip: "",
-    country: "Nigeria",
+    country: "Ghana",
     saveInfo: false,
   });
 
-  const shipping = totalPrice >= 100 ? 0 : 9.99;
-  const tax = totalPrice * 0.075;
-  const orderTotal = totalPrice + shipping + tax;
+  const orderTotal = totalPrice;
 
   function update(field: keyof FormData, value: string | boolean) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -120,7 +124,7 @@ export default function CheckoutPage() {
 
   function handlePaystack() {
     setIsProcessing(true);
-    const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || "pk_test_64dee056e17287eb745fbf5c668f89dda87e49a6";
 
     if (!window.PaystackPop) {
       toast({ title: "Paystack not loaded. Please refresh.", variant: "destructive" });
@@ -132,7 +136,7 @@ export default function CheckoutPage() {
       key: publicKey,
       email: form.email,
       amount: Math.round(orderTotal * 100),
-      currency: "NGN",
+      currency: "GHS",
       ref: generateRef(),
       firstname: form.firstName,
       lastname: form.lastName,
@@ -140,6 +144,49 @@ export default function CheckoutPage() {
         custom_fields: items.map(i => ({ display_name: i.product.name, variable_name: i.product.id, value: i.quantity })),
       },
       callback(response) {
+        // Save order to the store so admin can see it
+        const newOrder: Order = {
+          id: `EMP-${Date.now().toString().slice(-5)}`,
+          reference: response.reference,
+          customer: `${form.firstName} ${form.lastName}`,
+          email: form.email,
+          phone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+          country: form.country,
+          date: new Date().toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          status: "Pending",
+          paymentStatus: "Paid",
+          paymentMethod: "Paystack",
+          total: orderTotal,
+          items: items.map(i => ({
+            productId: i.product.id,
+            productName: i.product.name,
+            quantity: i.quantity,
+            price: i.product.price,
+            size: i.selectedSize,
+            image: i.product.image,
+          })),
+        };
+        // Decrement stock for each item
+        items.forEach(item => {
+          const currentProd = products.find(p => p.id === item.product.id);
+          if (currentProd && currentProd.stock !== undefined) {
+            updateProduct(item.product.id, {
+              stock: Math.max(0, currentProd.stock - item.quantity)
+            });
+          }
+        });
+
+        addOrder(newOrder);
         setIsProcessing(false);
         clearCart();
         setLocation(`/order-success?ref=${response.reference}`);
@@ -152,14 +199,7 @@ export default function CheckoutPage() {
     handler.openIframe();
   }
 
-  function handlePayOnDelivery() {
-    setIsProcessing(true);
-    setTimeout(() => {
-      const ref = generateRef();
-      clearCart();
-      setLocation(`/order-success?ref=${ref}&method=pod`);
-    }, 1500);
-  }
+
 
   if (items.length === 0 && !isProcessing) {
     return (
@@ -249,7 +289,7 @@ export default function CheckoutPage() {
                           value={form.phone}
                           onChange={e => update("phone", e.target.value)}
                           data-testid="input-phone"
-                          placeholder="+234 800 000 0000"
+                          placeholder="+233 20 000 0000"
                           className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black transition-colors"
                         />
                       </div>
@@ -291,7 +331,7 @@ export default function CheckoutPage() {
                             value={form.city}
                             onChange={e => update("city", e.target.value)}
                             data-testid="input-city"
-                            placeholder="Lagos"
+                            placeholder="Accra"
                             className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black transition-colors"
                           />
                         </div>
@@ -302,7 +342,7 @@ export default function CheckoutPage() {
                             value={form.state}
                             onChange={e => update("state", e.target.value)}
                             data-testid="input-state"
-                            placeholder="Lagos State"
+                            placeholder="Greater Accra"
                             className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black transition-colors"
                           />
                         </div>
@@ -315,7 +355,7 @@ export default function CheckoutPage() {
                             value={form.zip}
                             onChange={e => update("zip", e.target.value)}
                             data-testid="input-zip"
-                            placeholder="100001"
+                            placeholder="GA-000"
                             className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black transition-colors"
                           />
                         </div>
@@ -327,8 +367,8 @@ export default function CheckoutPage() {
                             data-testid="select-country"
                             className="w-full border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black transition-colors bg-white"
                           >
-                            <option>Nigeria</option>
                             <option>Ghana</option>
+                            <option>Nigeria</option>
                             <option>Kenya</option>
                             <option>South Africa</option>
                             <option>United States</option>
@@ -336,26 +376,7 @@ export default function CheckoutPage() {
                           </select>
                         </div>
                       </div>
-                      {/* Shipping methods */}
-                      <div className="mt-6">
-                        <h3 className="text-sm font-semibold uppercase tracking-wide mb-3">Shipping Method</h3>
-                        <div className="space-y-3">
-                          <label className="flex items-center justify-between border border-black bg-gray-50 px-4 py-3 cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <input type="radio" name="shipping" defaultChecked className="accent-black" />
-                              <span className="text-sm font-medium">Standard Delivery (3-5 days)</span>
-                            </div>
-                            <span className="text-sm font-bold">{totalPrice >= 100 ? "FREE" : "$9.99"}</span>
-                          </label>
-                          <label className="flex items-center justify-between border border-gray-200 px-4 py-3 cursor-pointer hover:border-black transition-colors">
-                            <div className="flex items-center gap-3">
-                              <input type="radio" name="shipping" className="accent-black" />
-                              <span className="text-sm font-medium">Express Delivery (1-2 days)</span>
-                            </div>
-                            <span className="text-sm font-bold">$19.99</span>
-                          </label>
-                        </div>
-                      </div>
+
                     </div>
                   </motion.div>
                 )}
@@ -366,7 +387,7 @@ export default function CheckoutPage() {
                     <h2 className="text-xl font-bold mb-6">Payment Method</h2>
 
                     <div className="space-y-4 mb-8">
-                      {/* Paystack */}
+                      {/* Secure Card / Mobile Money Payment */}
                       <label
                         data-testid="payment-method-paystack"
                         className={`flex items-start gap-4 border-2 p-4 cursor-pointer transition-colors ${paymentMethod === "paystack" ? "border-black bg-gray-50" : "border-gray-200 hover:border-gray-400"}`}
@@ -377,46 +398,18 @@ export default function CheckoutPage() {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-sm">Pay with Paystack</span>
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#00C3F7] bg-[#E8F9FE] px-2 py-0.5 rounded">
-                              <CreditCard size={12} /> PAYSTACK
+                            <span className="font-semibold text-sm">Pay with Card or Mobile Money</span>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+                              <CreditCard size={12} /> SECURE PAY
                             </div>
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">Card, bank transfer, USSD & more — powered by Paystack</p>
+                          <p className="text-xs text-gray-500 mt-1">Visa, Mastercard, Mobile Money, and local cards accepted</p>
                           {paymentMethod === "paystack" && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-4 space-y-3">
                               <div className="bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-700 flex items-center gap-2">
                                 <Shield size={14} />
-                                <span>You'll be redirected to Paystack's secure payment page</span>
+                                <span>You will be redirected to the secure payment portal</span>
                               </div>
-                              <div className="text-xs text-gray-400">
-                                Accepted: Visa, Mastercard, Verve, Bank Transfer, USSD
-                              </div>
-                            </motion.div>
-                          )}
-                        </div>
-                      </label>
-
-                      {/* Pay on Delivery */}
-                      <label
-                        data-testid="payment-method-pod"
-                        className={`flex items-start gap-4 border-2 p-4 cursor-pointer transition-colors ${paymentMethod === "pod" ? "border-black bg-gray-50" : "border-gray-200 hover:border-gray-400"}`}
-                        onClick={() => setPaymentMethod("pod")}
-                      >
-                        <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center flex-shrink-0 ${paymentMethod === "pod" ? "border-black" : "border-gray-300"}`}>
-                          {paymentMethod === "pod" && <div className="w-2.5 h-2.5 rounded-full bg-black" />}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-sm">Pay on Delivery</span>
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded">
-                              <Truck size={12} /> CASH / POS
-                            </div>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Pay cash or via POS when your order is delivered</p>
-                          {paymentMethod === "pod" && (
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-4 bg-green-50 border border-green-100 px-4 py-3 text-sm text-green-700">
-                              Your order will be confirmed and dispatched. Pay when it arrives at your door.
                             </motion.div>
                           )}
                         </div>
@@ -460,16 +453,14 @@ export default function CheckoutPage() {
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     disabled={isProcessing}
-                    onClick={paymentMethod === "paystack" ? handlePaystack : handlePayOnDelivery}
+                    onClick={handlePaystack}
                     data-testid="button-place-order"
                     className="bg-black text-white px-10 py-3.5 rounded-full font-bold text-sm uppercase tracking-wide hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:opacity-70"
                   >
                     {isProcessing ? (
                       <><Loader2 size={16} className="animate-spin" /> Processing…</>
-                    ) : paymentMethod === "paystack" ? (
-                      <><CreditCard size={16} /> Pay ${orderTotal.toFixed(2)}</>
                     ) : (
-                      <><Truck size={16} /> Place Order</>
+                      <><CreditCard size={16} /> Pay {formatPrice(orderTotal)}</>
                     )}
                   </motion.button>
                 )}
@@ -491,7 +482,7 @@ export default function CheckoutPage() {
                       <div className="flex-1 flex flex-col justify-center">
                         <p className="text-sm font-medium leading-snug">{item.product.name}</p>
                         <p className="text-xs text-gray-500 mt-0.5">Size: {item.selectedSize}</p>
-                        <p className="text-sm font-bold mt-1">${(item.product.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-sm font-bold mt-1">{formatPrice(item.product.price * item.quantity)}</p>
                       </div>
                     </div>
                   ))}
@@ -500,21 +491,11 @@ export default function CheckoutPage() {
                 <div className="border-t border-gray-200 pt-4 space-y-3 text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({totalItems} items)</span>
-                    <span className="font-semibold">${totalPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span className={`font-semibold ${shipping === 0 ? "text-green-600" : ""}`}>
-                      {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Tax</span>
-                    <span className="font-semibold">${tax.toFixed(2)}</span>
+                    <span className="font-semibold">{formatPrice(totalPrice)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-200">
                     <span>Total</span>
-                    <span>${orderTotal.toFixed(2)}</span>
+                    <span>{formatPrice(orderTotal)}</span>
                   </div>
                 </div>
 

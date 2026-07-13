@@ -7,12 +7,16 @@ import { CategoryCircle } from "@/components/ui/category-circle";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { PRODUCTS, CATEGORIES } from "@/data/products";
-
-const FEATURED = PRODUCTS.slice(0, 4);
-const NEW_ARRIVALS = PRODUCTS.filter(p => p.isNew);
+import { formatPrice } from "@/lib/currency";
+import { CATEGORIES } from "@/data/products";
+import { useProductStore } from "@/context/ProductStore";
+import OutfitImg from "@assets/outfit.jpeg";
+import W1Img from "@assets/w1.jpeg";
 
 export default function Home() {
+  const { products } = useProductStore();
+  const FEATURED = products.slice(0, 4);
+  const NEW_ARRIVALS = products.filter(p => p.isNew);
   return (
     <div className="min-h-screen flex flex-col font-sans">
       <AnnouncementBar />
@@ -21,34 +25,34 @@ export default function Home() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="bg-[#FAF8F5] relative overflow-hidden">
-          <div className="container mx-auto px-4 h-[600px] md:h-[700px] lg:h-[800px] flex flex-col md:flex-row items-center">
+          <div className="container mx-auto px-4 min-h-[500px] md:h-[700px] lg:h-[800px] flex flex-col md:flex-row items-center relative py-12 md:py-0">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="flex-1 z-10 pt-16 md:pt-0 pb-8 md:pb-0 md:pr-12 lg:pr-24"
+              className="flex-1 z-10 pt-8 md:pt-0 pb-8 md:pb-0 md:pr-12 lg:pr-24 flex flex-col items-center md:items-start text-center md:text-left"
             >
-              <div className="inline-block border border-black px-4 py-1 mb-6 text-xs font-bold tracking-widest uppercase">
-                Since 2010
+              <div className="inline-block border border-black px-4 py-1 mb-6 text-xs font-bold tracking-widest uppercase bg-white/85 md:bg-transparent">
+                EMPRESS DEALS
               </div>
               <h1 className="text-5xl md:text-6xl lg:text-[74px] leading-[1.05] font-bold text-[#111111] mb-6 tracking-tight">
-                Timeless<br />Appeal
+                Luxury<br />Redefined
               </h1>
-              <p className="text-base md:text-lg text-gray-500 mb-10 max-w-sm leading-relaxed">
-                Enjoy savings of up to 60% all month long on selected premium styles.
+              <p className="text-base md:text-lg text-gray-500 mb-10 max-w-sm leading-relaxed mx-auto md:mx-0">
+                Premium clothing, luxury shoes, and HD lace frontal wigs.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 <Link
                   href="/shop"
                   data-testid="button-explore-now"
-                  className="inline-flex items-center gap-2 bg-[#111111] text-white px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors text-sm"
+                  className="inline-flex items-center gap-2 bg-[#111111] text-white px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors text-sm shadow-md"
                 >
                   Explore Now <ArrowRight size={16} />
                 </Link>
                 <Link
                   href="/shop"
                   data-testid="button-view-sale"
-                  className="inline-flex items-center gap-2 border-2 border-black text-black px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-colors text-sm"
+                  className="inline-flex items-center gap-2 border-2 border-black text-black px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-colors text-sm bg-white md:bg-transparent"
                 >
                   View Sale
                 </Link>
@@ -58,13 +62,13 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.1 }}
-              className="flex-1 h-full w-full relative"
+              className="absolute inset-0 md:relative md:flex-1 h-full w-full z-0 md:z-10"
             >
-              <div className="absolute inset-0 md:-right-10 lg:-right-20 pt-8 md:pt-0">
+              <div className="absolute inset-0 md:-right-10 lg:-right-20">
                 <img
-                  src="/images/slipper3.jpeg"
+                  src="/images/hero-image.jpg"
                   alt="Fashion Model"
-                  className="w-full h-full object-cover object-top md:object-center"
+                  className="w-full h-full object-cover object-center opacity-25 md:opacity-100"
                 />
               </div>
             </motion.div>
@@ -110,8 +114,8 @@ export default function Home() {
                   key={product.id}
                   id={product.id}
                   name={product.name}
-                  price={`$${product.price.toFixed(2)}`}
-                  originalPrice={product.originalPrice ? `$${product.originalPrice.toFixed(2)}` : undefined}
+                  price={formatPrice(product.price)}
+                  originalPrice={product.originalPrice ? formatPrice(product.originalPrice) : undefined}
                   image={product.image}
                   onSale={product.onSale}
                   isNew={product.isNew}
@@ -129,33 +133,32 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Banner / Promo */}
-        <section className="py-0">
-          <div className="relative bg-[#111111] overflow-hidden">
-            <div className="container mx-auto px-4 py-20 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="text-white text-center md:text-left max-w-lg">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Limited Time</p>
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4">
-                  Up to 60% Off<br />This Season
-                </h2>
-                <p className="text-gray-400 mb-8 text-sm leading-relaxed">
-                  Shop our curated sale collection — premium pieces at extraordinary prices. Ends soon.
-                </p>
-                <Link
-                  href="/shop"
-                  data-testid="button-shop-sale"
-                  className="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-full font-bold uppercase tracking-wide hover:bg-gray-200 transition-colors text-sm"
-                >
-                  Shop the Sale <ArrowRight size={16} />
-                </Link>
-              </div>
-              <div className="w-full md:w-80 lg:w-96 aspect-[3/4] bg-gray-800 overflow-hidden flex-shrink-0">
-                <img
-                  src="/images/slipper4.jpeg"
-                  alt="Sale Collection"
-                  className="w-full h-full object-cover opacity-80"
-                />
-              </div>
+        {/* Special Collection Banner featuring outfit 3 */}
+        <section className="py-0 bg-white">
+          <div className="relative overflow-hidden bg-gray-50 flex flex-col md:flex-row items-center border-t border-b border-gray-100">
+            <div className="w-full md:w-1/2 aspect-video md:aspect-auto md:h-[450px] overflow-hidden">
+              <img
+                src={W1Img}
+                alt="Empress Collections"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="p-8 md:p-16 flex-1 text-left space-y-4">
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded">
+                Seasonal Spotlight
+              </span>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-black leading-tight">
+                The Silhouette Statement
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed max-w-md">
+                Indulge in modern luxury with pieces designed to turn heads. Hand-curated silhouettes, premium styling, and signature craftsmanship.
+              </p>
+              <Link
+                href="/shop"
+                className="inline-flex items-center gap-2 border-b-2 border-black pb-0.5 font-bold text-xs uppercase tracking-widest text-black hover:text-gray-600 transition-colors"
+              >
+                View Collection <ArrowRight size={12} />
+              </Link>
             </div>
           </div>
         </section>
@@ -182,8 +185,8 @@ export default function Home() {
                     key={product.id}
                     id={product.id}
                     name={product.name}
-                    price={`$${product.price.toFixed(2)}`}
-                    originalPrice={product.originalPrice ? `$${product.originalPrice.toFixed(2)}` : undefined}
+                    price={formatPrice(product.price)}
+                    originalPrice={product.originalPrice ? formatPrice(product.originalPrice) : undefined}
                     image={product.image}
                     onSale={product.onSale}
                     isNew={product.isNew}
@@ -194,7 +197,7 @@ export default function Home() {
           </section>
         )}
 
-        <TrustBanner />
+        
       </main>
 
       <Footer />

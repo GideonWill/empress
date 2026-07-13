@@ -1,40 +1,40 @@
-import { Truck, ShieldCheck, Clock, CreditCard } from "lucide-react";
+import { Lock, Award, Zap, Smile } from "lucide-react";
 
 export function TrustBanner() {
   const items = [
     {
-      icon: <Truck className="w-8 h-8 stroke-1" />,
-      title: "FREE SHIPPING & RETURN",
-      subtitle: "Free shipping on all orders over $99"
+      icon: <Award className="w-8 h-8 stroke-1 text-white" />,
+      title: "RELIABLE QUALITY",
+      subtitle: "Handpicked premium designer collections"
     },
     {
-      icon: <ShieldCheck className="w-8 h-8 stroke-1" />,
-      title: "MONEY GUARANTEE",
-      subtitle: "30 days money back guarantee"
+      icon: <Zap className="w-8 h-8 stroke-1 text-white" />,
+      title: "FAST & TRACKABLE",
+      subtitle: "Quick shipping and live delivery updates"
     },
     {
-      icon: <Clock className="w-8 h-8 stroke-1" />,
-      title: "ONLINE SUPPORT",
-      subtitle: "24/7 online customer support"
+      icon: <Smile className="w-8 h-8 stroke-1 text-white" />,
+      title: "USER FRIENDLY",
+      subtitle: "Easy shopping, payments, and support"
     },
     {
-      icon: <CreditCard className="w-8 h-8 stroke-1" />,
+      icon: <Lock className="w-8 h-8 stroke-1 text-white" />,
       title: "SECURE PAYMENTS",
-      subtitle: "100% secure payment processing"
+      subtitle: "100% encrypted checkout protection"
     }
   ];
 
   return (
-    <div className="border-y border-gray-100 py-12 bg-white">
+    <div className="py-6 bg-transparent">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {items.map((item, i) => (
             <div key={i} className="flex flex-col items-center text-center">
-              <div className="mb-4 text-black">
+              <div className="mb-4 text-white">
                 {item.icon}
               </div>
-              <h4 className="font-bold text-sm tracking-wide mb-2 uppercase">{item.title}</h4>
-              <p className="text-gray-500 text-sm">{item.subtitle}</p>
+              <h4 className="font-bold text-xs tracking-widest mb-1.5 uppercase text-white">{item.title}</h4>
+              <p className="text-gray-400 text-xs leading-relaxed max-w-[200px]">{item.subtitle}</p>
             </div>
           ))}
         </div>

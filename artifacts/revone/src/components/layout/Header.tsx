@@ -2,28 +2,44 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Search, User, Heart, ShoppingBag, Menu, X, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Logo from "@assets/revone-logo.svg";
+import Logo from "@assets/empress-logo.png";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
-import { PRODUCTS } from "@/data/products";
+import { useProductStore } from "@/context/ProductStore";
+import { formatPrice } from "@/lib/currency";
 
-const NAV_LINKS = [
+interface NavLink {
+  label: string;
+  href: string;
+  badge?: string;
+}
+
+const NAV_LINKS: NavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Shop", href: "/shop" },
-  { label: "Products", href: "/shop", badge: "SALE" },
-  { label: "Pages", href: "/blogs" },
+  { label: "Shop All", href: "/shop" },
   { label: "Blogs", href: "/blogs" },
+  { label: "Track Order", href: "/track" },
 ];
 
 export function Header() {
   const { totalItems } = useCart();
   const { totalItems: wishlistCount } = useWishlist();
+  const { products } = useProductStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState(PRODUCTS.slice(0, 0));
+  const [searchResults, setSearchResults] = useState<typeof products>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const [location] = useLocation();
+
+  const isActive = (href: string) => {
+    if (href === "/") return location === "/";
+    if (href.includes("?")) {
+      const [path, search] = href.split("?");
+      return location === path && window.location.search === `?${search}`;
+    }
+    return location === href;
+  };
 
   useEffect(() => { setMenuOpen(false); }, [location]);
 
@@ -34,13 +50,13 @@ export function Header() {
   useEffect(() => {
     if (searchQuery.trim().length > 1) {
       const q = searchQuery.toLowerCase();
-      setSearchResults(PRODUCTS.filter(p =>
+      setSearchResults(products.filter(p =>
         p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
       ).slice(0, 5));
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, products]);
 
   useEffect(() => {
     if (menuOpen || searchOpen) {
@@ -69,7 +85,12 @@ export function Header() {
           {/* Logo */}
           <div className="flex-1 md:flex-none flex justify-center md:justify-start">
             <Link href="/">
-              <img src={Logo} alt="Empress" className="h-6 md:h-8" />
+              <img 
+                src={Logo} 
+                alt="Empress" 
+                className="h-14 md:h-20 object-contain hover:scale-105 transition-transform duration-300" 
+                style={{ filter: "sepia(0.6) saturate(3) hue-rotate(5deg) brightness(0.7) contrast(1.2)" }}
+              />
             </Link>
           </div>
 
@@ -80,7 +101,7 @@ export function Header() {
                 <Link
                   href={link.href}
                   data-testid={`nav-${link.label.toLowerCase()}`}
-                  className={`text-sm font-semibold tracking-wide hover:text-gray-600 transition-colors uppercase ${location === link.href ? "text-black" : "text-gray-800"}`}
+                  className={`text-sm font-semibold tracking-wide hover:text-gray-600 transition-colors uppercase pb-1 ${isActive(link.href) ? "text-black border-b-2 border-black" : "text-gray-800"}`}
                 >
                   {link.label}
                 </Link>
@@ -103,11 +124,11 @@ export function Header() {
               <Search className="w-5 h-5" />
             </button>
 
-            <button className="hidden md:block hover:text-gray-600 transition-colors p-1">
+            <Link href="/profile" className="hidden md:block hover:text-gray-600 transition-colors p-1" data-testid="button-profile">
               <User className="w-5 h-5" />
-            </button>
+            </Link>
 
-            <Link href="/shop" className="relative hover:text-gray-600 transition-colors p-1" data-testid="button-wishlist">
+            <Link href="/favorites" className="relative hover:text-gray-600 transition-colors p-1" data-testid="button-wishlist">
               <Heart className="w-5 h-5" />
               {wishlistCount > 0 && (
                 <span className="absolute -top-1.5 -right-2 bg-black text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-medium">
@@ -152,7 +173,12 @@ export function Header() {
               className="fixed top-0 left-0 bottom-0 w-80 bg-white z-[70] flex flex-col overflow-y-auto"
             >
               <div className="flex items-center justify-between p-5 border-b border-gray-100">
-                <img src={Logo} alt="Empress" className="h-7" />
+                <img 
+                  src={Logo} 
+                  alt="Empress" 
+                  className="h-14 object-contain" 
+                  style={{ filter: "sepia(0.6) saturate(3) hue-rotate(5deg) brightness(0.7) contrast(1.2)" }}
+                />
                 <button
                   onClick={() => setMenuOpen(false)}
                   data-testid="button-close-menu"
@@ -168,7 +194,7 @@ export function Header() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="flex items-center justify-between py-3.5 px-3 text-base font-semibold uppercase tracking-wide hover:bg-gray-50 rounded-lg transition-colors"
+                        className={`flex items-center justify-between py-3.5 px-3 text-base font-semibold uppercase tracking-wide hover:bg-gray-50 rounded-lg transition-colors ${isActive(link.href) ? "bg-gray-50 text-black font-bold" : "text-gray-800"}`}
                       >
                         <span>{link.label}</span>
                         <div className="flex items-center gap-2">
@@ -190,10 +216,10 @@ export function Header() {
                       <span className="ml-auto bg-black text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{totalItems}</span>
                     )}
                   </Link>
-                  <button className="flex items-center gap-3 w-full py-3.5 px-3 text-sm font-semibold hover:bg-gray-50 rounded-lg transition-colors">
+                  <Link href="/profile" className="flex items-center gap-3 w-full py-3.5 px-3 text-sm font-semibold hover:bg-gray-50 rounded-lg transition-colors">
                     <User size={18} />
                     My Account
-                  </button>
+                  </Link>
                 </div>
               </nav>
 
@@ -257,7 +283,7 @@ export function Header() {
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{p.name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{p.category} · ${p.price.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{p.category} · {formatPrice(p.price)}</p>
                         </div>
                         <ChevronRight size={16} className="ml-auto text-gray-400" />
                       </Link>

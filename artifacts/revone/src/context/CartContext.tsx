@@ -73,7 +73,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = useCallback(() => setItems([]), []);
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalItems = items.length;
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const isInCart = useCallback((productId: string) => items.some(i => i.product.id === productId), [items]);
 

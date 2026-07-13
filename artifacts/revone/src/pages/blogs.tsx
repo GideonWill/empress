@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { TrustBanner } from "@/components/layout/TrustBanner";
 import { BLOG_POSTS } from "@/data/products";
+import BlogHeroImg from "@assets/outfit 4.jpeg";
 
 const BLOG_CATEGORIES = ["All", "Style Guide", "Trends", "Sustainability", "Occasions", "Buyer's Guide"];
 
@@ -25,20 +26,28 @@ export default function Blogs() {
       <Header />
 
       <main className="flex-1 bg-white">
-        {/* Page Header */}
-        <div className="bg-[#FAF8F5] py-16 px-4">
-          <div className="container mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">The Journal</h1>
-            <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed mb-4">
+        {/* Hero Banner */}
+        <section className="relative h-[45vh] min-h-[280px] w-full overflow-hidden bg-black">
+          <img
+            src={BlogHeroImg}
+            alt="The Journal"
+            className="absolute inset-0 w-full h-full object-cover opacity-50"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4 tracking-tight">
+              The Journal
+            </h1>
+            <p className="text-gray-300 max-w-md mx-auto text-sm leading-relaxed mb-4 font-medium">
               Style stories, buying guides, and fashion insights from the Empress team.
             </p>
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-              <Link href="/" className="hover:text-black transition-colors">Home</Link>
+            <div className="flex items-center space-x-2 text-sm text-gray-300 font-semibold">
+              <Link href="/" className="hover:text-white transition-colors">Home</Link>
               <ChevronRight size={14} />
-              <span className="text-black">Blogs</span>
+              <span className="text-white">Blogs</span>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Category Filter */}
         <div className="border-b border-gray-100 bg-white sticky top-20 z-30">
@@ -160,30 +169,6 @@ export default function Blogs() {
           )}
         </div>
 
-        {/* Newsletter CTA */}
-        <section className="bg-[#111111] text-white py-20 px-4">
-          <div className="container mx-auto max-w-xl text-center">
-            <h2 className="text-3xl font-bold mb-3">Stay in the loop</h2>
-            <p className="text-gray-400 mb-8 text-sm">Get new articles, style tips, and exclusive offers delivered to your inbox.</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                placeholder="Your email address"
-                data-testid="input-newsletter-email"
-                className="flex-1 bg-transparent border border-gray-600 px-5 py-3.5 text-sm outline-none focus:border-white transition-colors text-white placeholder-gray-500"
-              />
-              <button
-                data-testid="button-newsletter-subscribe"
-                className="bg-white text-black font-bold px-8 py-3.5 text-sm uppercase tracking-wide hover:bg-gray-200 transition-colors"
-              >
-                Subscribe
-              </button>
-            </div>
-            <p className="text-xs text-gray-600 mt-4">No spam. Unsubscribe anytime.</p>
-          </div>
-        </section>
-
-        <TrustBanner />
       </main>
 
       <Footer />
