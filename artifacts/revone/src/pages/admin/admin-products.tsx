@@ -35,7 +35,7 @@ export default function AdminProducts() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleSaveProduct = (id: string) => {
+  const handleSaveProduct = async (id: string) => {
     const newPrice = parseFloat(editPrice);
     const newStock = parseInt(editStock, 10);
     const updates: any = {};
@@ -45,17 +45,27 @@ export default function AdminProducts() {
     if (!isNaN(newStock) && newStock >= 0) {
       updates.stock = newStock;
     }
-    if (Object.keys(updates).length > 0) {
-      updateProduct(id, updates);
-    }
+
     setEditingId(null);
     setEditPrice("");
     setEditStock("");
+
+    if (Object.keys(updates).length > 0) {
+      try {
+        await updateProduct(id, updates);
+      } catch (err) {
+        console.error("Failed to update product:", err);
+      }
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deleteProduct(id);
+  const handleDelete = async (id: string) => {
     setDeleteConfirm(null);
+    try {
+      await deleteProduct(id);
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+    }
   };
 
   return (

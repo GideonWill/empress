@@ -70,7 +70,9 @@ export default function AdminAddProduct() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -78,26 +80,32 @@ export default function AdminAddProduct() {
       Math.max(0, ...products.map((p) => parseInt(p.id, 10)).filter(n => !isNaN(n))) + 1
     ).toString();
 
-    addProduct({
-      id: newId,
-      name: name.trim(),
-      price: parseFloat(price),
-      originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
-      image: imageUrl.trim(),
-      images: [imageUrl.trim()],
-      category,
-      onSale,
-      isNew,
-      colors: selectedColors,
-      sizes: selectedSizes,
-      description: description.trim(),
-      details: details.filter((d) => d.trim() !== ""),
-      rating: 0,
-      reviewCount: 0,
-      stock: parseInt(stock, 10),
-    });
-
-    setLocation("/admin/products");
+    setSubmitting(true);
+    try {
+      await addProduct({
+        id: newId,
+        name: name.trim(),
+        price: parseFloat(price),
+        originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
+        image: imageUrl.trim(),
+        images: [imageUrl.trim()],
+        category,
+        onSale,
+        isNew,
+        colors: selectedColors,
+        sizes: selectedSizes,
+        description: description.trim(),
+        details: details.filter((d) => d.trim() !== ""),
+        rating: 0,
+        reviewCount: 0,
+        stock: parseInt(stock, 10),
+      });
+      setLocation("/admin/products");
+    } catch (err) {
+      console.error("Failed to add product:", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -371,9 +379,10 @@ export default function AdminAddProduct() {
           <div className="flex items-center gap-4">
             <button
               type="submit"
-              className="bg-gradient-to-r from-amber-500 to-amber-600 text-black px-8 py-3 rounded-lg font-bold text-sm uppercase tracking-wide hover:from-amber-400 hover:to-amber-500 transition-all"
+              disabled={submitting}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 text-black px-8 py-3 rounded-lg font-bold text-sm uppercase tracking-wide hover:from-amber-400 hover:to-amber-500 transition-all disabled:opacity-50"
             >
-              Add Product
+              {submitting ? "Adding..." : "Add Product"}
             </button>
             <Link
               href="/admin/products"
