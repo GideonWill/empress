@@ -7,6 +7,8 @@ interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  registerWithEmail: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   refetchProfile: () => Promise<void>;
 }
@@ -43,6 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 2. Google Login Mutation
   const loginMutation = useGoogleLogin();
 
+  const [emailLoading, setEmailLoading] = useState(false);
+
   const loginWithGoogle = async (credential: string) => {
     try {
       setAuthError(null);
@@ -55,6 +59,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const errMsg = err.message || "Google login failed. Please try again.";
       setAuthError(errMsg);
       throw new Error(errMsg);
+    }
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      setAuthError(null);
+      setEmailLoading(true);
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+      setUser(data);
+      await refetch();
+    } catch (err: any) {
+      setAuthError(err.message);
+      throw err;
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const registerWithEmail = async (email: string, password: string, fullName: string) => {
+    try {
+      setAuthError(null);
+      setEmailLoading(true);
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Registration failed");
+      }
+      setUser(data);
+      await refetch();
+    } catch (err: any) {
+      setAuthError(err.message);
+      throw err;
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -83,9 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isLoading: isProfileLoading || loginMutation.isPending || logoutMutation.isPending,
+        isLoading: isProfileLoading || loginMutation.isPending || logoutMutation.isPending || emailLoading,
         error: authError,
         loginWithGoogle,
+        loginWithEmail,
+        registerWithEmail,
         logout,
         refetchProfile,
       }}
