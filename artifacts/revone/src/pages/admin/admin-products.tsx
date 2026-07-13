@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useProductStore } from "@/context/ProductStore";
 import { formatPrice } from "@/lib/currency";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Plus,
@@ -21,6 +22,7 @@ export default function AdminProducts() {
   const [editPrice, setEditPrice] = useState("");
   const [editStock, setEditStock] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
 
   const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
 
@@ -148,7 +150,11 @@ export default function AdminProducts() {
                     {/* Product Info */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gray-800 overflow-hidden flex-shrink-0">
+                        <div 
+                          className="w-12 h-12 rounded-lg bg-gray-800 overflow-hidden flex-shrink-0 cursor-zoom-in hover:opacity-80 transition-opacity border border-gray-800"
+                          onClick={() => setPreviewImage({ src: product.image, title: product.name })}
+                          title="Click to view full picture"
+                        >
                           <img
                             src={product.image}
                             alt={product.name}
@@ -337,6 +343,55 @@ export default function AdminProducts() {
           )}
         </div>
       </div>
+
+      {/* Photo Preview Modal */}
+      <AnimatePresence>
+        {previewImage && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.8 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPreviewImage(null)}
+              className="fixed inset-0 bg-black/95 z-[100] cursor-zoom-out"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 flex items-center justify-center p-4 z-[101] pointer-events-none"
+            >
+              <div 
+                className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden max-w-2xl w-full shadow-2xl relative pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="absolute top-4 right-4 p-2 bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors z-10"
+                >
+                  <X size={18} />
+                </button>
+                <div className="aspect-[3/4] sm:aspect-video w-full bg-gray-950 flex items-center justify-center">
+                  <img
+                    src={previewImage.src}
+                    alt={previewImage.title}
+                    className="w-full h-full object-contain max-h-[75vh]"
+                  />
+                </div>
+                <div className="p-5 border-t border-gray-850 bg-gray-900 flex justify-between items-center">
+                  <h4 className="text-white font-bold text-sm leading-snug">{previewImage.title}</h4>
+                  <button 
+                    onClick={() => setPreviewImage(null)}
+                    className="text-xs text-gray-450 hover:text-white uppercase font-bold tracking-wider"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </AdminLayout>
   );
 }
