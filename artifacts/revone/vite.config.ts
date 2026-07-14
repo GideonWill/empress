@@ -48,6 +48,14 @@ export default defineConfig({
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
     sourcemap: false,
+    rollupOptions: {
+      onwarn(warning, defaultHandler) {
+        if (warning.code === "SOURCEMAP_ERROR" || warning.message.includes("sourcemap")) {
+          return;
+        }
+        defaultHandler(warning);
+      },
+    },
   },
   server: {
     port,
