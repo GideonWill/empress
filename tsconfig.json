@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": false,
-    "noEmit": false
+    "noEmit": false,
+    "customConditions": ["workspace"]
   },
   "include": ["api/index.ts"]
 }
