@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm --filter @workspace/revone build",
+  "outputDirectory": "artifacts/revone/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
