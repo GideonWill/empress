@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter @workspace/revone build",
-  "outputDirectory": "artifacts/revone/dist/public",
+  "buildCommand": "vite build --config vite.config.ts",
+  "outputDirectory": "dist/public",
   "framework": "vite",
   "rewrites": [
     {
