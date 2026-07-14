@@ -1,3 +1,4 @@
+// Trigger Vercel Build - force compile changes
 import { useEffect } from "react";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
